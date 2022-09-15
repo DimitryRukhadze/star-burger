@@ -1,8 +1,12 @@
+import json
+
+from phonenumbers.phonenumberutil import NumberParseException
+from phonenumber_field.phonenumber import PhoneNumber
+
 from django.http import JsonResponse
 from django.templatetags.static import static
 
-
-from .models import Product
+from .models import Product, Order, OrderItem
 
 
 def banners_list_api(request):
@@ -58,5 +62,30 @@ def product_list_api(request):
 
 
 def register_order(request):
-    # TODO это лишь заглушка
-    return JsonResponse({})
+    try:
+        order = json.loads(request.body.decode())
+    except ValueError:
+        return JsonResponse({
+            'error': 'no valid json',
+        })
+
+    try:
+        phone_num = PhoneNumber.from_string(order['phonenumber'], region='RU')
+        new_order = Order.objects.create(
+            customer_name=order['firstname'],
+            customer_surname=order['lastname'],
+            phonenumber=phone_num,
+            address=order['address']
+        )
+        for product in order['products']:
+            ordered_food = Product.objects.get(id=product['product'])
+            OrderItem.objects.create(
+                order=new_order,
+                product=ordered_food,
+                quantity=product['quantity']
+            )
+
+    except NumberParseException:
+        raise
+
+    return JsonResponse(order)

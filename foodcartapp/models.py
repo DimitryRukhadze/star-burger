@@ -1,29 +1,7 @@
 from django.db import models
 from django.core.validators import MinValueValidator
 
-
-class Restaurant(models.Model):
-    name = models.CharField(
-        'название',
-        max_length=50
-    )
-    address = models.CharField(
-        'адрес',
-        max_length=100,
-        blank=True,
-    )
-    contact_phone = models.CharField(
-        'контактный телефон',
-        max_length=50,
-        blank=True,
-    )
-
-    class Meta:
-        verbose_name = 'ресторан'
-        verbose_name_plural = 'рестораны'
-
-    def __str__(self):
-        return self.name
+from phonenumber_field.modelfields import PhoneNumberField
 
 
 class ProductQuerySet(models.QuerySet):
@@ -88,6 +66,66 @@ class Product(models.Model):
     class Meta:
         verbose_name = 'товар'
         verbose_name_plural = 'товары'
+
+    def __str__(self):
+        return self.name
+
+
+class Order(models.Model):
+    customer_name = models.CharField(
+        max_length=200,
+        verbose_name='Имя'
+    )
+    customer_surname = models.CharField(
+        max_length=200,
+        verbose_name='Фамилия'
+    )
+    phonenumber = PhoneNumberField(
+        region='RU',
+        verbose_name='Телефон'
+    )
+    address=models.CharField(
+        max_length=200,
+        verbose_name='Адрес'
+    )
+
+    class Meta:
+        verbose_name = 'Заказ',
+        verbose_name_plural = 'Заказы'
+
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, verbose_name='Товар', on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(verbose_name='Количество')
+
+
+class Restaurant(models.Model):
+    name = models.CharField(
+        'название',
+        max_length=50
+    )
+    address = models.CharField(
+        'адрес',
+        max_length=100,
+        blank=True,
+    )
+    contact_phone = models.CharField(
+        'контактный телефон',
+        max_length=50,
+        blank=True,
+    )
+    orders = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name='restaurant',
+        blank=True,
+        null=True
+    )
+
+    class Meta:
+        verbose_name = 'ресторан'
+        verbose_name_plural = 'рестораны'
 
     def __str__(self):
         return self.name
