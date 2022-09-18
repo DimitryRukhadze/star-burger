@@ -72,6 +72,23 @@ def register_order(request):
         })
 
     try:
+        ordered_products = order['products']
+    except KeyError:
+        return Response({
+            'error': 'KeyError. No "products" key in incoming json.'
+        })
+
+    if not ordered_products:
+        return Response({
+            'error': 'No products in this order'
+        })
+
+    if not isinstance(ordered_products, list):
+        return Response({
+            'error': 'Products must be given as list of instances'
+        })
+
+    try:
         phone_num = PhoneNumber.from_string(order['phonenumber'], region='RU')
         new_order = Order.objects.create(
             customer_name=order['firstname'],
@@ -79,15 +96,15 @@ def register_order(request):
             phonenumber=phone_num,
             address=order['address']
         )
-        for product in order['products']:
-            ordered_food = Product.objects.get(id=product['product'])
-            OrderItem.objects.create(
-                order=new_order,
-                product=ordered_food,
-                quantity=product['quantity']
-            )
-
     except NumberParseException:
         raise
+
+    for product in ordered_products:
+        ordered_food = Product.objects.get(id=product['product'])
+        OrderItem.objects.create(
+            order=new_order,
+            product=ordered_food,
+            quantity=product['quantity']
+        )
 
     return Response(order)
