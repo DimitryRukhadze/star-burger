@@ -1,12 +1,15 @@
 import json
 
+from phonenumbers import is_valid_number
 from phonenumbers.phonenumberutil import NumberParseException
 from phonenumber_field.phonenumber import PhoneNumber
 
 from django.http import JsonResponse
 from django.templatetags.static import static
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework import status
 
 from .models import Product, Order, OrderItem
 
@@ -71,25 +74,62 @@ def register_order(request):
             'error': 'no valid json',
         })
 
-    try:
-        ordered_products = order['products']
-    except KeyError:
-        return Response({
-            'error': 'KeyError. No "products" key in incoming json.'
-        })
+    mandatory_fields = ['firstname', 'lastname', 'products', 'phonenumber', 'address']
 
-    if not ordered_products:
+    for field in mandatory_fields:
+        try:
+            order[field]
+        except KeyError:
+            return Response({
+                'error': f'KeyError. Field {field} is empty',
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    for field, field_value in order.items():
+        if not field_value:
+            return Response({
+                'error': f'{field} value must not be empty',
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    if not isinstance(order['firstname'], str):
         return Response({
-            'error': 'No products in this order'
-        })
+            'error': f'firstname value must be str',
+        },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+    ordered_products = order['products']
 
     if not isinstance(ordered_products, list):
         return Response({
             'error': 'Products must be given as list of instances'
-        })
+        },
+        status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+    for product in ordered_products:
+        try:
+            Product.objects.get(id=product['product'])
+        except ObjectDoesNotExist:
+            return Response({
+                'error': f'No product with id {product["product"]}'
+            },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     try:
         phone_num = PhoneNumber.from_string(order['phonenumber'], region='RU')
+
+        if not is_valid_number(phone_num):
+            return Response({
+            'error': 'Phone number is invalid'
+        },
+        status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
         new_order = Order.objects.create(
             customer_name=order['firstname'],
             customer_surname=order['lastname'],
