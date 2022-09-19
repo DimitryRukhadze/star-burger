@@ -15,11 +15,12 @@ from .models import Product, Order, OrderItem
 
 
 class OrderSerializer(ModelSerializer):
-    products = ListField(allow_empty=False)
+    products = ListField(allow_empty=False, write_only=True)
 
     class Meta:
         model = Order
         fields = [
+            'id',
             'firstname',
             'lastname',
             'address',
@@ -51,6 +52,16 @@ class OrderSerializer(ModelSerializer):
                     'error': f'No product with id {product.get("product")}'
                 })
         return value
+
+    def create(self, validated_data):
+        new_order = Order(
+            firstname=validated_data['firstname'],
+            lastname=validated_data['lastname'],
+            phonenumber=validated_data['phonenumber'],
+            address=validated_data['address']
+        )
+        new_order.save()
+        return new_order
 
 
 def banners_list_api(request):
@@ -110,13 +121,7 @@ def register_order(request):
     serializer = OrderSerializer(data=order)
     serializer.is_valid(raise_exception=True)
 
-    new_order = Order.objects.create(
-        firstname=serializer.validated_data['firstname'],
-        lastname=serializer.validated_data['lastname'],
-        phonenumber=serializer.validated_data['phonenumber'],
-        address=serializer.validated_data['address']
-    )
-
+    new_order = serializer.save()
     ordered_products = serializer.validated_data['products']
 
     for product in ordered_products:
