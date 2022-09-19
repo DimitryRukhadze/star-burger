@@ -72,11 +72,11 @@ class Product(models.Model):
 
 
 class Order(models.Model):
-    customer_name = models.CharField(
+    firstname = models.CharField(
         max_length=200,
         verbose_name='Имя'
     )
-    customer_surname = models.CharField(
+    lastname = models.CharField(
         max_length=200,
         verbose_name='Фамилия'
     )

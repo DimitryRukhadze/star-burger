@@ -115,8 +115,8 @@ class ProductAdmin(admin.ModelAdmin):
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     list_display = [
-        'customer_name',
-        'customer_surname',
+        'firstname',
+        'lastname',
         'address',
         'phonenumber',
     ]

@@ -9,9 +9,48 @@ from django.templatetags.static import static
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework.serializers import ValidationError, ModelSerializer, CharField, ListField
 
 from .models import Product, Order, OrderItem
+
+
+class OrderSerializer(ModelSerializer):
+    products = ListField(allow_empty=False)
+
+    class Meta:
+        model = Order
+        fields = [
+            'firstname',
+            'lastname',
+            'address',
+            'products',
+            'phonenumber'
+        ]
+
+    def validate_phonenumber(self, value):
+        try:
+            phone_num = PhoneNumber.from_string(value, region='RU')
+            if not is_valid_number(phone_num):
+                raise ValidationError({
+                'error': 'Phone number is invalid'
+            })
+
+        except NumberParseException:
+            raise ValidationError({
+            'error': 'Phone number is invalid'
+        })
+
+        return phone_num
+
+    def validate_products(self, value):
+        for product in value:
+            try:
+                Product.objects.get(id=product.get('product'))
+            except ObjectDoesNotExist:
+                raise ValidationError({
+                    'error': f'No product with id {product.get("product")}'
+                })
+        return value
 
 
 def banners_list_api(request):
@@ -67,77 +106,18 @@ def product_list_api(request):
 
 @api_view(['POST'])
 def register_order(request):
-    try:
-        order = request.data
-    except ValueError:
-        return Response({
-            'error': 'no valid json',
-        })
+    order = request.data
+    serializer = OrderSerializer(data=order)
+    serializer.is_valid(raise_exception=True)
 
-    mandatory_fields = ['firstname', 'lastname', 'products', 'phonenumber', 'address']
+    new_order = Order.objects.create(
+        firstname=serializer.validated_data['firstname'],
+        lastname=serializer.validated_data['lastname'],
+        phonenumber=serializer.validated_data['phonenumber'],
+        address=serializer.validated_data['address']
+    )
 
-    for field in mandatory_fields:
-        try:
-            order[field]
-        except KeyError:
-            return Response({
-                'error': f'KeyError. Field {field} is empty',
-            },
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-    for field, field_value in order.items():
-        if not field_value:
-            return Response({
-                'error': f'{field} value must not be empty',
-            },
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-    if not isinstance(order['firstname'], str):
-        return Response({
-            'error': f'firstname value must be str',
-        },
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
-    ordered_products = order['products']
-
-    if not isinstance(ordered_products, list):
-        return Response({
-            'error': 'Products must be given as list of instances'
-        },
-        status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
-    for product in ordered_products:
-        try:
-            Product.objects.get(id=product['product'])
-        except ObjectDoesNotExist:
-            return Response({
-                'error': f'No product with id {product["product"]}'
-            },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-    try:
-        phone_num = PhoneNumber.from_string(order['phonenumber'], region='RU')
-
-        if not is_valid_number(phone_num):
-            return Response({
-            'error': 'Phone number is invalid'
-        },
-        status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
-        new_order = Order.objects.create(
-            customer_name=order['firstname'],
-            customer_surname=order['lastname'],
-            phonenumber=phone_num,
-            address=order['address']
-        )
-    except NumberParseException:
-        raise
+    ordered_products = serializer.validated_data['products']
 
     for product in ordered_products:
         ordered_food = Product.objects.get(id=product['product'])
