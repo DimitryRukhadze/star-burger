@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import F, Q, Prefetch
 from django.core.validators import MinValueValidator
 
 from phonenumber_field.modelfields import PhoneNumberField
@@ -12,6 +13,13 @@ class ProductQuerySet(models.QuerySet):
             .values_list('product')
         )
         return self.filter(pk__in=products)
+
+
+class OrderItemQuerySet(models.QuerySet):
+    def get_item_price(self):
+        priced_items = self.annotate(price=F('product__price') * F('quantity'))
+        total_price = sum([item.price for item in priced_items])
+        return total_price
 
 
 class ProductCategory(models.Model):
@@ -45,7 +53,7 @@ class Product(models.Model):
         'цена',
         max_digits=8,
         decimal_places=2,
-        validators=[MinValueValidator(0)]
+        validators=[MinValueValidator(0)],
     )
     image = models.ImageField(
         'картинка'
@@ -95,9 +103,10 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='order_items')
     product = models.ForeignKey(Product, verbose_name='Товар', on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(verbose_name='Количество')
+    objects = OrderItemQuerySet.as_manager()
 
 
 class Restaurant(models.Model):
