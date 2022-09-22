@@ -1,7 +1,7 @@
 from django import forms
 from django.shortcuts import redirect, render
 from django.views import View
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.contrib.auth.decorators import user_passes_test
 from django.db import transaction
 
@@ -101,6 +101,7 @@ def view_orders(request):
             if item['order_id'] == order.id
         ])
         order.price = total_price
+        order.order_url = reverse('admin:foodcartapp_order_change', args=(order.id,))
 
     return render(request, template_name='order_items.html', context={
         'order_items': order_details
