@@ -129,7 +129,8 @@ def register_order(request):
         OrderItem.objects.create(
             order=new_order,
             product=ordered_food,
-            quantity=product['quantity']
+            quantity=product['quantity'],
+            item_price=ordered_food.price * int(product['quantity'])
         )
 
     return Response(serializer.data)

@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import F, Q, Prefetch
+from django.db.models import F, Q, Prefetch, Subquery
 from django.core.validators import MinValueValidator
 
 from phonenumber_field.modelfields import PhoneNumberField
@@ -17,9 +17,7 @@ class ProductQuerySet(models.QuerySet):
 
 class OrderItemQuerySet(models.QuerySet):
     def get_item_price(self):
-        priced_items = self.annotate(price=F('product__price') * F('quantity'))
-        total_price = sum([item.price for item in priced_items])
-        return total_price
+        return self.annotate(price=F('item_price') * F('quantity'))
 
 
 class ProductCategory(models.Model):
@@ -107,6 +105,7 @@ class OrderItem(models.Model):
     product = models.ForeignKey(Product, verbose_name='Товар', on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(verbose_name='Количество')
     objects = OrderItemQuerySet.as_manager()
+    item_price = models.DecimalField(max_digits=8, decimal_places=2)
 
 
 class Restaurant(models.Model):
