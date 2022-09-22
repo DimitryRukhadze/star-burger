@@ -10,6 +10,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError, ModelSerializer, CharField, ListField
+from django.db import transaction
 
 from .models import Product, Order, OrderItem
 
@@ -115,6 +116,7 @@ def product_list_api(request):
         'indent': 4,
     })
 
+@transaction.non_atomic_requests
 @api_view(['POST'])
 def register_order(request):
     order = request.data
