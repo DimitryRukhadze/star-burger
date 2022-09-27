@@ -78,6 +78,17 @@ class Product(models.Model):
 
 
 class Order(models.Model):
+
+    NOT_PROCESSED = 'NP'
+    PROCESSED = 'PR'
+    FINISHED = 'FN'
+
+    ord_stats = [
+        (NOT_PROCESSED, 'Необработанный'),
+        (PROCESSED, 'Обработанный'),
+        (FINISHED, 'Завершенный')
+    ]
+
     firstname = models.CharField(
         max_length=200,
         verbose_name='Имя'
@@ -93,6 +104,13 @@ class Order(models.Model):
     address=models.CharField(
         max_length=200,
         verbose_name='Адрес'
+    )
+    status = models.CharField(
+        max_length=20,
+        verbose_name='Статус заказа',
+        choices=ord_stats,
+        default=NOT_PROCESSED,
+        db_index=True,
     )
 
     class Meta:
