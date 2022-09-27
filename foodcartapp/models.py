@@ -111,6 +111,10 @@ class Order(models.Model):
         choices=ord_stats,
         default=NOT_PROCESSED,
         db_index=True,
+    ),
+    comments = models.TextField(
+        blank=True,
+        verbose_name='Комментарии к заказу'
     )
 
     class Meta:
