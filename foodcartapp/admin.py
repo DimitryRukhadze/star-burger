@@ -117,6 +117,7 @@ class ProductAdmin(admin.ModelAdmin):
 class OrderAdmin(admin.ModelAdmin):
     list_display = [
         'status',
+        'payment_type',
         'firstname',
         'lastname',
         'address',

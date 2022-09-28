@@ -84,10 +84,18 @@ class Order(models.Model):
     PROCESSED = 'PR'
     FINISHED = 'FN'
 
+    ELECTRON = 'El'
+    CASHE = 'Ca'
+
     ord_stats = [
         (NOT_PROCESSED, 'Необработанный'),
         (PROCESSED, 'Обработанный'),
         (FINISHED, 'Завершенный')
+    ]
+
+    payments = [
+        (ELECTRON, 'Банковской картой'),
+        (CASHE, 'Наличными')
     ]
 
     firstname = models.CharField(
@@ -131,6 +139,12 @@ class Order(models.Model):
         verbose_name='Доставлен',
         blank=True,
         null=True
+    )
+    payment_type = models.CharField(
+        max_length=20,
+        verbose_name='Способ оплаты',
+        choices=payments,
+        default=CASHE
     )
 
     class Meta:
