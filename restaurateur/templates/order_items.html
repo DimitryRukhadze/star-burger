@@ -35,8 +35,8 @@
             <td>Готовит {{item.restaurants.name}}</td>
           {% else %}
             <td>Могут приготовить:
-                {% for name in item.avail_restaurants %}
-                  <p>- {{name}}
+                {% for name, dist in item.avail_restaurants.items %}
+                  <p>- {{name}} - {{dist}}
                 {% endfor %}
             </td>
           {% endif %}

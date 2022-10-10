@@ -1,9 +1,14 @@
+import requests
+from environs import Env
+from geopy import distance
+
 from django import forms
 from django.shortcuts import redirect, render
 from django.views import View
 from django.urls import reverse_lazy, reverse
 from django.contrib.auth.decorators import user_passes_test
 from django.db.models import Prefetch
+from django.conf import settings
 
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
@@ -59,6 +64,24 @@ class LogoutView(auth_views.LogoutView):
     next_page = reverse_lazy('restaurateur:login')
 
 
+def fetch_coordinates(apikey, address):
+    base_url = "https://geocode-maps.yandex.ru/1.x"
+    response = requests.get(base_url, params={
+        "geocode": address,
+        "apikey": apikey,
+        "format": "json",
+    })
+    response.raise_for_status()
+    found_places = response.json()['response']['GeoObjectCollection']['featureMember']
+
+    if not found_places:
+        return None
+
+    most_relevant = found_places[0]
+    lon, lat = most_relevant['GeoObject']['Point']['pos'].split(" ")
+    return lon, lat
+
+
 def is_manager(user):
     return user.is_staff  # FIXME replace with specific permission
 
@@ -92,7 +115,7 @@ def view_restaurants(request):
 
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
-    order_details = Order.objects.prefetch_related('order_items').all()
+    order_details = Order.objects.prefetch_related('order_items').prefetch_related('restaurants').all()
     order_items = OrderItem.objects.select_related(
         'order'
     ).select_related(
@@ -104,6 +127,9 @@ def view_orders(request):
             'product'
         ).filter(availability=True))
     ).all()
+
+    for restaurant in restaurants:
+        restaurant.geo_pos = fetch_coordinates(settings.YA_API_KEY, restaurant.address)
 
     order_items_prices = order_items.get_item_price().values('order_id', 'total_price')
 
@@ -122,11 +148,18 @@ def view_orders(request):
 
         order.price = total_price
         if not order.restaurants:
-            order.avail_restaurants = []
+            avail_restaurants = {}
             for restaurant in restaurants:
                 for menu_item in restaurant.menu_items.all():
-                    if menu_item.product in order_items_products and restaurant.name not in order.avail_restaurants:
-                        order.avail_restaurants.append(restaurant.name)
+                    if restaurant.geo_pos:
+                        order_geo_pos = fetch_coordinates(settings.YA_API_KEY, order.address)
+                        dist_to_restaurant = distance.distance(restaurant.geo_pos, order_geo_pos)
+                        if menu_item.product in order_items_products and restaurant.name not in avail_restaurants.keys():
+                            avail_restaurants[restaurant.name] = dist_to_restaurant
+            if not avail_restaurants:
+                order.avail_restaurants = ['Ошибка определения координат']
+            else:
+                order.avail_restaurants = dict(sorted(avail_restaurants.items(), key=lambda x: x[1]))
         order.order_url = reverse('admin:foodcartapp_order_change', args=(order.id,))
 
     return render(request, template_name='order_items.html', context={
