@@ -115,14 +115,18 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
+    def get_restaurants(self):
+        return self.restaurants.all()
+
     list_display = [
         'status',
         'payment_type',
         'firstname',
         'lastname',
         'address',
-        'phonenumber'
+        'phonenumber',
     ]
+
     inlines = [OrderItemInline]
 
     def response_change(self, request, obj):

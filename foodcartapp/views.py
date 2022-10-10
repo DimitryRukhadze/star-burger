@@ -1,5 +1,3 @@
-import json
-
 from phonenumbers import is_valid_number
 from phonenumbers.phonenumberutil import NumberParseException
 from phonenumber_field.phonenumber import PhoneNumber

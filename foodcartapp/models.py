@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import F, Q, Prefetch, Subquery
+from django.db.models import F
 from django.core.validators import MinValueValidator
 from django.utils import timezone
 
@@ -18,7 +18,7 @@ class ProductQuerySet(models.QuerySet):
 
 class OrderItemQuerySet(models.QuerySet):
     def get_item_price(self):
-        return self.annotate(price=F('item_price') * F('quantity'))
+        return self.annotate(total_price=F('item_price') * F('quantity'))
 
 
 class ProductCategory(models.Model):
@@ -76,6 +76,61 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+
+
+class Restaurant(models.Model):
+    name = models.CharField(
+        'название',
+        max_length=50
+    )
+    address = models.CharField(
+        'адрес',
+        max_length=100,
+        blank=True,
+    )
+    contact_phone = models.CharField(
+        'контактный телефон',
+        max_length=50,
+        blank=True,
+    )
+
+    class Meta:
+        verbose_name = 'ресторан'
+        verbose_name_plural = 'рестораны'
+
+    def __str__(self):
+        return self.name
+
+
+class RestaurantMenuItem(models.Model):
+    restaurant = models.ForeignKey(
+        Restaurant,
+        related_name='menu_items',
+        verbose_name="ресторан",
+        on_delete=models.CASCADE,
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='menu_items',
+        verbose_name='продукт',
+    )
+    availability = models.BooleanField(
+        'в продаже',
+        default=True,
+        db_index=True
+    )
+
+    class Meta:
+        verbose_name = 'пункт меню ресторана'
+        verbose_name_plural = 'пункты меню ресторана'
+        unique_together = [
+            ['restaurant', 'product']
+        ]
+
+    def __str__(self):
+        return f"{self.restaurant.name} - {self.product.name}"
 
 
 class Order(models.Model):
@@ -147,9 +202,18 @@ class Order(models.Model):
         default=CASHE
     )
 
+    restaurants = models.ForeignKey(
+        Restaurant,
+        on_delete=models.CASCADE,
+        related_name='orders',
+        blank=True,
+        null=True
+    )
+
     class Meta:
         verbose_name = 'Заказ',
         verbose_name_plural = 'Заказы'
+        ordering = ['status', 'registered_at']
 
 
 class OrderItem(models.Model):
@@ -158,64 +222,3 @@ class OrderItem(models.Model):
     quantity = models.PositiveIntegerField(verbose_name='Количество')
     objects = OrderItemQuerySet.as_manager()
     item_price = models.DecimalField(max_digits=8, decimal_places=2)
-
-
-class Restaurant(models.Model):
-    name = models.CharField(
-        'название',
-        max_length=50
-    )
-    address = models.CharField(
-        'адрес',
-        max_length=100,
-        blank=True,
-    )
-    contact_phone = models.CharField(
-        'контактный телефон',
-        max_length=50,
-        blank=True,
-    )
-    orders = models.ForeignKey(
-        Order,
-        on_delete=models.CASCADE,
-        related_name='restaurant',
-        blank=True,
-        null=True
-    )
-
-    class Meta:
-        verbose_name = 'ресторан'
-        verbose_name_plural = 'рестораны'
-
-    def __str__(self):
-        return self.name
-
-
-class RestaurantMenuItem(models.Model):
-    restaurant = models.ForeignKey(
-        Restaurant,
-        related_name='menu_items',
-        verbose_name="ресторан",
-        on_delete=models.CASCADE,
-    )
-    product = models.ForeignKey(
-        Product,
-        on_delete=models.CASCADE,
-        related_name='menu_items',
-        verbose_name='продукт',
-    )
-    availability = models.BooleanField(
-        'в продаже',
-        default=True,
-        db_index=True
-    )
-
-    class Meta:
-        verbose_name = 'пункт меню ресторана'
-        verbose_name_plural = 'пункты меню ресторана'
-        unique_together = [
-            ['restaurant', 'product']
-        ]
-
-    def __str__(self):
-        return f"{self.restaurant.name} - {self.product.name}"

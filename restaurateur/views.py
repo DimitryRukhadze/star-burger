@@ -3,12 +3,12 @@ from django.shortcuts import redirect, render
 from django.views import View
 from django.urls import reverse_lazy, reverse
 from django.contrib.auth.decorators import user_passes_test
-from django.db import transaction
+from django.db.models import Prefetch
 
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
 
-from foodcartapp.models import Product, Restaurant, Order, OrderItem
+from foodcartapp.models import Product, Restaurant, Order, OrderItem, RestaurantMenuItem
 
 
 class Login(forms.Form):
@@ -93,14 +93,40 @@ def view_restaurants(request):
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
     order_details = Order.objects.prefetch_related('order_items').all()
-    order_items = OrderItem.objects.filter(order__in=order_details).values('order_id', 'item_price')
+    order_items = OrderItem.objects.select_related(
+        'order'
+    ).select_related(
+        'product'
+    ).filter(order__in=order_details)
+
+    restaurants = Restaurant.objects.prefetch_related(
+        Prefetch('menu_items', queryset=RestaurantMenuItem.objects.prefetch_related(
+            'product'
+        ).filter(availability=True))
+    ).all()
+
+    order_items_prices = order_items.get_item_price().values('order_id', 'total_price')
+
     for order in order_details:
-        total_price = sum([
-            item['item_price']
+        order_items_products = [
+            item.product
             for item in order_items
+            if item.order == order
+        ]
+
+        total_price = sum([
+            item['total_price']
+            for item in order_items_prices
             if item['order_id'] == order.id
         ])
+
         order.price = total_price
+        if not order.restaurants:
+            order.avail_restaurants = []
+            for restaurant in restaurants:
+                for menu_item in restaurant.menu_items.all():
+                    if menu_item.product in order_items_products and restaurant.name not in order.avail_restaurants:
+                        order.avail_restaurants.append(restaurant.name)
         order.order_url = reverse('admin:foodcartapp_order_change', args=(order.id,))
 
     return render(request, template_name='order_items.html', context={

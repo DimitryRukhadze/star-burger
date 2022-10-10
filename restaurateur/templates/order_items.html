@@ -18,6 +18,7 @@
       <th>Клиент</th>
       <th>Телефон</th>
       <th>Адрес доставки</th>
+      <th>Рестораны</th>
       <th>Стоимость заказа</th>
       <th>Ссылка на админку</th>
     </tr>
@@ -30,7 +31,16 @@
         <td>{{item.firstname}} {{item.lastname}}</td>
         <td>{{item.phonenumber}}</td>
         <td>{{item.address}}</td>
-        <td>{{item.price}}</td>
+          {% if item.restaurants %}
+            <td>Готовит {{item.restaurants.name}}</td>
+          {% else %}
+            <td>Могут приготовить:
+                {% for name in item.avail_restaurants %}
+                  <p>- {{name}}
+                {% endfor %}
+            </td>
+          {% endif %}
+        <td>{{item.price}} р.</td>
         <td><a href="{% url 'admin:foodcartapp_order_change' object_id=item.id %}?next={{request.get_full_path | urlencode}}">Редактирование</a></td>
       </tr>
      {% endif %}
