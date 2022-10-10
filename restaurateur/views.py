@@ -1,5 +1,4 @@
 import requests
-from environs import Env
 from geopy import distance
 
 from django import forms
@@ -14,6 +13,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
 
 from foodcartapp.models import Product, Restaurant, Order, OrderItem, RestaurantMenuItem
+from geodata.models import PlaceGeo
 
 
 class Login(forms.Form):
@@ -127,9 +127,25 @@ def view_orders(request):
             'product'
         ).filter(availability=True))
     ).all()
+    all_places = PlaceGeo.objects.all()
+    all_places_full = [place for place in PlaceGeo.objects.all()]
+    places_addresses = all_places.values_list('address', flat=True)
 
     for restaurant in restaurants:
-        restaurant.geo_pos = fetch_coordinates(settings.YA_API_KEY, restaurant.address)
+        if restaurant.address not in places_addresses:
+            restaurant_lon, restaurant_lat = fetch_coordinates(settings.YA_API_KEY, restaurant.address)
+            PlaceGeo.objects.update_or_create(
+                address=restaurant.address,
+                lon=restaurant_lon,
+                lat=restaurant_lat
+            )
+            restaurant.geo_pos = (restaurant_lon, restaurant_lat)
+        else:
+            restaurant_place_geo = ''
+            for place in all_places_full:
+                if place.address == restaurant.address:
+                    restaurant_place_geo = (place.lon, place.lat)
+            restaurant.geo_pos = restaurant_place_geo
 
     order_items_prices = order_items.get_item_price().values('order_id', 'total_price')
 
@@ -139,6 +155,20 @@ def view_orders(request):
             for item in order_items
             if item.order == order
         ]
+
+        if order.address not in places_addresses:
+            order_lon, order_lat = fetch_coordinates(settings.YA_API_KEY, restaurant.address)
+            PlaceGeo.objects.update_or_create(
+                address=order.address,
+                lon=order_lon,
+                lat=order_lat
+            )
+            order_geo_pos = (order_lon, order_lat)
+        else:
+            order_geo_pos = ''
+            for place in all_places_full:
+                if place.address == order.address:
+                    order_geo_pos = (place.lon, place.lat)
 
         total_price = sum([
             item['total_price']
@@ -152,12 +182,11 @@ def view_orders(request):
             for restaurant in restaurants:
                 for menu_item in restaurant.menu_items.all():
                     if restaurant.geo_pos:
-                        order_geo_pos = fetch_coordinates(settings.YA_API_KEY, order.address)
                         dist_to_restaurant = distance.distance(restaurant.geo_pos, order_geo_pos)
                         if menu_item.product in order_items_products and restaurant.name not in avail_restaurants.keys():
                             avail_restaurants[restaurant.name] = dist_to_restaurant
             if not avail_restaurants:
-                order.avail_restaurants = ['Ошибка определения координат']
+                order.avail_restaurants = 'Ошибка определения координат'
             else:
                 order.avail_restaurants = dict(sorted(avail_restaurants.items(), key=lambda x: x[1]))
         order.order_url = reverse('admin:foodcartapp_order_change', args=(order.id,))

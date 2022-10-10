@@ -9,9 +9,11 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError, ModelSerializer, CharField, ListField
 from django.db import transaction
+from django.conf import settings
 
 from .models import Product, Order, OrderItem
-
+from geodata.models import PlaceGeo
+from restaurateur.views import fetch_coordinates
 
 class OrderSerializer(ModelSerializer):
     products = ListField(allow_empty=False, write_only=True)
@@ -122,6 +124,12 @@ def register_order(request):
     serializer.is_valid(raise_exception=True)
 
     new_order = serializer.save()
+    order_lon, order_lat = fetch_coordinates(settings.YA_API_KEY, new_order.address)
+    PlaceGeo.objects.get_or_create(
+        address=new_order.address,
+        lon=order_lon,
+        lat=order_lat
+    )
     ordered_products = serializer.validated_data['products']
 
     for product in ordered_products:
