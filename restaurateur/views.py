@@ -12,7 +12,13 @@ from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
 
-from foodcartapp.models import Product, Restaurant, Order, OrderItem, RestaurantMenuItem
+from foodcartapp.models import (
+    Product,
+    Restaurant,
+    Order,
+    OrderItem,
+    RestaurantMenuItem
+)
 from geodata.models import PlaceGeo
 
 
@@ -72,7 +78,13 @@ def fetch_coordinates(apikey, address):
         "format": "json",
     })
     response.raise_for_status()
-    found_places = response.json()['response']['GeoObjectCollection']['featureMember']
+    found_places = response.json()[
+        'response'
+    ][
+        'GeoObjectCollection'
+    ][
+        'featureMember'
+    ]
 
     if not found_places:
         return None
@@ -91,19 +103,29 @@ def view_products(request):
     restaurants = list(Restaurant.objects.order_by('name'))
     products = list(Product.objects.prefetch_related('menu_items'))
 
-    products_with_restaurant_availability = []
+    products_with_availability = []
     for product in products:
-        availability = {item.restaurant_id: item.availability for item in product.menu_items.all()}
-        ordered_availability = [availability.get(restaurant.id, False) for restaurant in restaurants]
+        availability = {
+            item.restaurant_id: item.availability
+            for item in product.menu_items.all()
+        }
+        ordered_availability = [
+            availability.get(restaurant.id, False)
+            for restaurant in restaurants
+        ]
 
-        products_with_restaurant_availability.append(
+        products_with_availability.append(
             (product, ordered_availability)
         )
 
-    return render(request, template_name="products_list.html", context={
-        'products_with_restaurant_availability': products_with_restaurant_availability,
-        'restaurants': restaurants,
-    })
+    return render(
+        request,
+        template_name="products_list.html",
+        context={
+            'products_with_availability': products_with_availability,
+            'restaurants': restaurants
+        }
+    )
 
 
 @user_passes_test(is_manager, login_url='restaurateur:login')
@@ -115,7 +137,11 @@ def view_restaurants(request):
 
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
-    order_details = Order.objects.prefetch_related('items').prefetch_related('restaurants').all()
+    order_details = Order.objects.prefetch_related(
+        'items'
+    ).prefetch_related(
+        'restaurants'
+    ).all()
     order_items = OrderItem.objects.select_related(
         'order'
     ).select_related(
@@ -123,9 +149,12 @@ def view_orders(request):
     ).filter(order__in=order_details)
 
     restaurants = Restaurant.objects.prefetch_related(
-        Prefetch('menu_items', queryset=RestaurantMenuItem.objects.prefetch_related(
-            'product'
-        ).filter(availability=True))
+        Prefetch(
+            'menu_items',
+            queryset=RestaurantMenuItem.objects.prefetch_related(
+                'product'
+            ).filter(availability=True)
+        )
     ).all()
     all_places = PlaceGeo.objects.all()
     all_places_full = [place for place in PlaceGeo.objects.all()]
@@ -133,7 +162,10 @@ def view_orders(request):
 
     for restaurant in restaurants:
         if restaurant.address not in places_addresses:
-            restaurant_lon, restaurant_lat = fetch_coordinates(settings.YA_API_KEY, restaurant.address)
+            restaurant_lon, restaurant_lat = fetch_coordinates(
+                settings.YA_API_KEY,
+                restaurant.address
+            )
             PlaceGeo.objects.update_or_create(
                 address=restaurant.address,
                 lon=restaurant_lon,
@@ -147,7 +179,10 @@ def view_orders(request):
                     restaurant_place_geo = (place.lon, place.lat)
             restaurant.geo_pos = restaurant_place_geo
 
-    order_items_prices = order_items.get_item_price().values('order_id', 'total_price')
+    order_items_prices = order_items.get_item_price().values(
+        'order_id',
+        'total_price'
+    )
 
     for order in order_details:
         order_items_products = [
@@ -157,7 +192,10 @@ def view_orders(request):
         ]
 
         if order.address not in places_addresses:
-            order_lon, order_lat = fetch_coordinates(settings.YA_API_KEY, restaurant.address)
+            order_lon, order_lat = fetch_coordinates(
+                settings.YA_API_KEY,
+                restaurant.address
+            )
             PlaceGeo.objects.update_or_create(
                 address=order.address,
                 lon=order_lon,
@@ -182,14 +220,28 @@ def view_orders(request):
             for restaurant in restaurants:
                 for menu_item in restaurant.menu_items.all():
                     if restaurant.geo_pos:
-                        dist_to_restaurant = distance.distance(restaurant.geo_pos, order_geo_pos)
-                        if menu_item.product in order_items_products and restaurant.name not in avail_restaurants.keys():
-                            avail_restaurants[restaurant.name] = dist_to_restaurant
+                        dist_to_restaurant = distance.distance(
+                            restaurant.geo_pos,
+                            order_geo_pos
+                        )
+                        if menu_item.product in order_items_products\
+                                and restaurant.name\
+                                not in avail_restaurants.keys():
+                            avail_restaurants[
+                                restaurant.name
+                            ] = dist_to_restaurant
             if not avail_restaurants:
                 order.avail_restaurants = 'Ошибка определения координат'
             else:
-                order.avail_restaurants = dict(sorted(avail_restaurants.items(), key=lambda x: x[1]))
-        order.order_url = reverse('admin:foodcartapp_order_change', args=(order.id,))
+                order.avail_restaurants = dict(
+                    sorted(
+                        avail_restaurants.items(), key=lambda x: x[1]
+                    )
+                )
+        order.order_url = reverse(
+            'admin:foodcartapp_order_change',
+            args=(order.id,)
+        )
 
     return render(request, template_name='order_items.html', context={
         'order_items': order_details

@@ -53,7 +53,6 @@ class ProductAdmin(admin.ModelAdmin):
         'category',
     ]
     search_fields = [
-        # FIXME SQLite can not convert letter case for cyrillic words properly, so search will be buggy.
         # Migration to PostgreSQL is necessary
         'name',
         'category__name',
@@ -97,14 +96,21 @@ class ProductAdmin(admin.ModelAdmin):
     def get_image_preview(self, obj):
         if not obj.image:
             return 'выберите картинку'
-        return format_html('<img src="{url}" style="max-height: 200px;"/>', url=obj.image.url)
+        return format_html(
+            '<img src="{url}" style="max-height: 200px;"/>',
+            url=obj.image.url
+        )
     get_image_preview.short_description = 'превью'
 
     def get_image_list_preview(self, obj):
         if not obj.image or not obj.id:
             return 'нет картинки'
         edit_url = reverse('admin:foodcartapp_product_change', args=(obj.id,))
-        return format_html('<a href="{edit_url}"><img src="{src}" style="max-height: 50px;"/></a>', edit_url=edit_url, src=obj.image.url)
+        return format_html(
+            '<a href="{edit_url}"><img src="{src}" style="max-height: 50px;"/></a>',
+            edit_url=edit_url,
+            src=obj.image.url
+        )
     get_image_list_preview.short_description = 'превью'
 
 
@@ -131,7 +137,8 @@ class OrderAdmin(admin.ModelAdmin):
 
     def response_change(self, request, obj):
         response = super(OrderAdmin, self).response_change(request, obj)
-        if 'next' in request.GET and url_has_allowed_host_and_scheme(request.GET['next'], None):
+        if 'next' in request.GET\
+                and url_has_allowed_host_and_scheme(request.GET['next'], None):
             return redirect(request.GET['next'])
         else:
             return response

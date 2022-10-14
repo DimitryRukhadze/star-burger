@@ -7,13 +7,18 @@ from django.templatetags.static import static
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework.serializers import ValidationError, ModelSerializer, CharField, ListField
+from rest_framework.serializers import (
+    ValidationError,
+    ModelSerializer,
+    ListField
+)
 from django.db import transaction
 from django.conf import settings
 
 from .models import Product, Order, OrderItem
 from geodata.models import PlaceGeo
 from restaurateur.views import fetch_coordinates
+
 
 class OrderSerializer(ModelSerializer):
     products = ListField(allow_empty=False, write_only=True)
@@ -33,14 +38,18 @@ class OrderSerializer(ModelSerializer):
         try:
             phone_num = PhoneNumber.from_string(value, region='RU')
             if not is_valid_number(phone_num):
-                raise ValidationError({
-                'error': 'Phone number is invalid'
-            })
+                raise ValidationError(
+                    {
+                        'error': 'Phone number is invalid'
+                     }
+                )
 
         except NumberParseException:
-            raise ValidationError({
-            'error': 'Phone number is invalid'
-        })
+            raise ValidationError(
+                {
+                    'error': 'Phone number is invalid'
+                }
+            )
 
         return phone_num
 
@@ -116,6 +125,7 @@ def product_list_api(request):
         'indent': 4,
     })
 
+
 @transaction.non_atomic_requests
 @api_view(['POST'])
 def register_order(request):
@@ -124,7 +134,10 @@ def register_order(request):
     serializer.is_valid(raise_exception=True)
 
     new_order = serializer.save()
-    order_lon, order_lat = fetch_coordinates(settings.YA_API_KEY, new_order.address)
+    order_lon, order_lat = fetch_coordinates(
+        settings.YA_API_KEY,
+        new_order.address
+    )
     PlaceGeo.objects.get_or_create(
         address=new_order.address,
         lon=order_lon,
