@@ -140,7 +140,7 @@ def view_orders(request):
     order_details = Order.objects.prefetch_related(
         'items'
     ).prefetch_related(
-        'restaurants'
+        'chosen_restaurant'
     ).all()
     order_items = OrderItem.objects.select_related(
         'order'
@@ -215,7 +215,7 @@ def view_orders(request):
         ])
 
         order.price = total_price
-        if not order.restaurants:
+        if not order.chosen_restaurant:
             avail_restaurants = {}
             for restaurant in restaurants:
                 for menu_item in restaurant.menu_items.all():

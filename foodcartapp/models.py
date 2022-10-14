@@ -201,7 +201,7 @@ class Order(models.Model):
         default=CASH
     )
 
-    restaurants = models.ForeignKey(
+    chosen_restaurant = models.ForeignKey(
         Restaurant,
         verbose_name='Ресторан',
         on_delete=models.CASCADE,
