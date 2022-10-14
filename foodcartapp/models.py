@@ -142,7 +142,7 @@ class Order(models.Model):
     ELECTRON = 'El'
     CASHE = 'Ca'
 
-    ord_stats = [
+    order_stats = [
         (NOT_PROCESSED, 'Необработанный'),
         (PROCESSED, 'Обработанный'),
         (FINISHED, 'Завершенный')
@@ -172,7 +172,7 @@ class Order(models.Model):
     status = models.CharField(
         max_length=20,
         verbose_name='Статус заказа',
-        choices=ord_stats,
+        choices=order_stats,
         default=NOT_PROCESSED,
         db_index=True,
     )
