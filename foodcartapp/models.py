@@ -221,5 +221,5 @@ class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items', verbose_name='Заказ')
     product = models.ForeignKey(Product, verbose_name='Товар', on_delete=models.CASCADE, related_name='items')
     quantity = models.PositiveIntegerField(verbose_name='Количество')
-    objects = OrderItemQuerySet.as_manager()
     item_price = models.DecimalField(max_digits=8, decimal_places=2, verbose_name='Цена позиции')
+    objects = OrderItemQuerySet.as_manager()
