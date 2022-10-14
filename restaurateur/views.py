@@ -115,7 +115,7 @@ def view_restaurants(request):
 
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
-    order_details = Order.objects.prefetch_related('order_items').prefetch_related('restaurants').all()
+    order_details = Order.objects.prefetch_related('items').prefetch_related('restaurants').all()
     order_items = OrderItem.objects.select_related(
         'order'
     ).select_related(
