@@ -139,7 +139,7 @@ class Order(models.Model):
     FINISHED = 'FN'
 
     ELECTRON = 'El'
-    CASHE = 'Ca'
+    CASH = 'Ca'
 
     ORDER_STATUSES = [
         (NOT_PROCESSED, 'Необработанный'),
@@ -149,7 +149,7 @@ class Order(models.Model):
 
     PAYMENT_TYPES = [
         (ELECTRON, 'Банковской картой'),
-        (CASHE, 'Наличными')
+        (CASH, 'Наличными')
     ]
 
     firstname = models.CharField(
@@ -198,7 +198,7 @@ class Order(models.Model):
         max_length=20,
         verbose_name='Способ оплаты',
         choices=PAYMENT_TYPES,
-        default=CASHE
+        default=CASH
     )
 
     restaurants = models.ForeignKey(
