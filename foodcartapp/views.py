@@ -133,13 +133,13 @@ def register_order(request):
     serializer = OrderSerializer(data=order)
     serializer.is_valid(raise_exception=True)
 
-    new_order = serializer.save()
+    serialized_order = serializer.save()
     order_lon, order_lat = fetch_coordinates(
         settings.YA_API_KEY,
-        new_order.address
+        serialized_order.address
     )
     PlaceGeo.objects.get_or_create(
-        address=new_order.address,
+        address=serialized_order.address,
         lon=order_lon,
         lat=order_lat
     )
@@ -148,7 +148,7 @@ def register_order(request):
     for product in ordered_products:
         ordered_food = Product.objects.get(id=product['product'])
         OrderItem.objects.create(
-            order=new_order,
+            order=serialized_order,
             product=ordered_food,
             quantity=product['quantity'],
             price=ordered_food.price * int(product['quantity'])
