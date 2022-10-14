@@ -142,13 +142,13 @@ class Order(models.Model):
     ELECTRON = 'El'
     CASHE = 'Ca'
 
-    order_stats = [
+    ORDER_STATS = [
         (NOT_PROCESSED, 'Необработанный'),
         (PROCESSED, 'Обработанный'),
         (FINISHED, 'Завершенный')
     ]
 
-    payments = [
+    PAYMENTS = [
         (ELECTRON, 'Банковской картой'),
         (CASHE, 'Наличными')
     ]
@@ -172,7 +172,7 @@ class Order(models.Model):
     status = models.CharField(
         max_length=20,
         verbose_name='Статус заказа',
-        choices=order_stats,
+        choices=ORDER_STATS,
         default=NOT_PROCESSED,
         db_index=True,
     )
@@ -198,7 +198,7 @@ class Order(models.Model):
     payment_type = models.CharField(
         max_length=20,
         verbose_name='Способ оплаты',
-        choices=payments,
+        choices=PAYMENTS,
         default=CASHE
     )
 
