@@ -1,7 +1,7 @@
 from django.db import models
 
 
-class PlaceGeo(models.Model):
+class PlaceGeolocation(models.Model):
     address = models.CharField(
         'Адрес',
         max_length=200,

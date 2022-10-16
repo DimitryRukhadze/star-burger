@@ -19,7 +19,7 @@ from foodcartapp.models import (
     OrderItem,
     RestaurantMenuItem
 )
-from geodata.models import PlaceGeo
+from geodata.models import PlaceGeolocation
 
 
 class Login(forms.Form):
@@ -156,8 +156,8 @@ def view_orders(request):
             ).filter(availability=True)
         )
     ).all()
-    all_places = PlaceGeo.objects.all()
-    all_places_full = [place for place in PlaceGeo.objects.all()]
+    all_places = PlaceGeolocation.objects.all()
+    all_places_full = [place for place in PlaceGeolocation.objects.all()]
     places_addresses = all_places.values_list('address', flat=True)
 
     for restaurant in restaurants:
@@ -166,7 +166,7 @@ def view_orders(request):
                 settings.YA_API_KEY,
                 restaurant.address
             )
-            PlaceGeo.objects.update_or_create(
+            PlaceGeolocation.objects.update_or_create(
                 address=restaurant.address,
                 lon=restaurant_lon,
                 lat=restaurant_lat
@@ -196,7 +196,7 @@ def view_orders(request):
                 settings.YA_API_KEY,
                 restaurant.address
             )
-            PlaceGeo.objects.update_or_create(
+            PlaceGeolocation.objects.update_or_create(
                 address=order.address,
                 lon=order_lon,
                 lat=order_lat

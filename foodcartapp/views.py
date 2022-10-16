@@ -16,7 +16,7 @@ from django.db import transaction
 from django.conf import settings
 
 from .models import Product, Order, OrderItem
-from geodata.models import PlaceGeo
+from geodata.models import PlaceGeolocation
 from restaurateur.views import fetch_coordinates
 
 
@@ -138,7 +138,7 @@ def register_order(request):
         settings.YA_API_KEY,
         serialized_order.address
     )
-    PlaceGeo.objects.get_or_create(
+    PlaceGeolocation.objects.get_or_create(
         address=serialized_order.address,
         lon=order_lon,
         lat=order_lat
