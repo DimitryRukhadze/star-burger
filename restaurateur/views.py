@@ -71,6 +71,7 @@ class LogoutView(auth_views.LogoutView):
 
 
 def fetch_coordinates(apikey, address):
+    return None
     base_url = "https://geocode-maps.yandex.ru/1.x"
     response = requests.get(base_url, params={
         "geocode": address,
@@ -192,16 +193,19 @@ def view_orders(request):
         ]
 
         if order.address not in places_addresses:
-            order_lon, order_lat = fetch_coordinates(
-                settings.YA_API_KEY,
-                restaurant.address
-            )
-            PlaceGeolocation.objects.update_or_create(
-                address=order.address,
-                lon=order_lon,
-                lat=order_lat
-            )
-            order_geo_pos = (order_lon, order_lat)
+            try:
+                order_lon, order_lat = fetch_coordinates(
+                    settings.YA_API_KEY,
+                    restaurant.address
+                )
+                PlaceGeolocation.objects.update_or_create(
+                    address=order.address,
+                    lon=order_lon,
+                    lat=order_lat
+                )
+                order_geo_pos = (order_lon, order_lat)
+            except TypeError:
+                print("Order location not found")
         else:
             order_geo_pos = ''
             for place in all_places_full:

@@ -134,15 +134,18 @@ def register_order(request):
     serializer.is_valid(raise_exception=True)
 
     serialized_order = serializer.save()
-    order_lon, order_lat = fetch_coordinates(
-        settings.YA_API_KEY,
-        serialized_order.address
-    )
-    PlaceGeolocation.objects.get_or_create(
-        address=serialized_order.address,
-        lon=order_lon,
-        lat=order_lat
-    )
+    try:
+        order_lon, order_lat = fetch_coordinates(
+            settings.YA_API_KEY,
+            serialized_order.address
+        )
+        PlaceGeolocation.objects.get_or_create(
+            address=serialized_order.address,
+            lon=order_lon,
+            lat=order_lat
+        )
+    except TypeError:
+        print("Order location not found")
     ordered_products = serializer.validated_data['products']
 
     for product in ordered_products:
