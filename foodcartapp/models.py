@@ -229,10 +229,14 @@ class OrderItem(models.Model):
         on_delete=models.CASCADE,
         related_name='items'
     )
-    quantity = models.PositiveIntegerField(verbose_name='Количество')
+    quantity = models.PositiveIntegerField(
+        verbose_name='Количество',
+        validators=[MinValueValidator(1)]
+    )
     price = models.DecimalField(
         max_digits=8,
         decimal_places=2,
-        verbose_name='Цена позиции'
+        verbose_name='Цена позиции',
+        validators=[MinValueValidator(0)]
     )
     objects = OrderItemQuerySet.as_manager()
