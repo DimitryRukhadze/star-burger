@@ -198,7 +198,7 @@ class Order(models.Model):
         max_length=20,
         verbose_name='Способ оплаты',
         choices=PAYMENT_TYPES,
-        default=CASH
+        blank=True
     )
 
     chosen_restaurant = models.ForeignKey(
