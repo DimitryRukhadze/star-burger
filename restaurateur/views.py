@@ -71,7 +71,6 @@ class LogoutView(auth_views.LogoutView):
 
 
 def fetch_coordinates(apikey, address):
-    return None
     base_url = "https://geocode-maps.yandex.ru/1.x"
     response = requests.get(base_url, params={
         "geocode": address,
