@@ -17,7 +17,7 @@ from django.conf import settings
 
 from .models import Product, Order, OrderItem
 from geodata.models import PlaceGeolocation
-from restaurateur.views import fetch_coordinates
+from geodata.views import fetch_coordinates
 
 
 class OrderSerializer(ModelSerializer):
