@@ -142,11 +142,17 @@ def view_orders(request):
     ).prefetch_related(
         'chosen_restaurant'
     ).all()
+
     order_items = OrderItem.objects.select_related(
         'order'
     ).select_related(
         'product'
     ).filter(order__in=order_details)
+
+    order_addresses = [
+        order.address
+        for order in order_details
+    ]
 
     restaurants = Restaurant.objects.prefetch_related(
         Prefetch(
@@ -156,28 +162,36 @@ def view_orders(request):
             ).filter(availability=True)
         )
     ).all()
-    all_places = PlaceGeolocation.objects.all()
-    all_places_full = [place for place in PlaceGeolocation.objects.all()]
-    places_addresses = all_places.values_list('address', flat=True)
+    restaurants_addresses = [
+        restaurant.address
+        for restaurant in restaurants
+    ]
+
+    order_places = PlaceGeolocation.objects.filter(address__in=order_addresses)
+    restaurant_places = PlaceGeolocation.objects.filter(address__in=restaurants_addresses)
+    order_places_full = [place for place in order_places]
+    order_places_addresses = order_places.values_list('address', flat=True)
+    restaurant_places_addresses = restaurant_places.values_list('address', flat=True)
 
     for restaurant in restaurants:
-        if restaurant.address not in places_addresses:
+        if restaurant.address not in restaurant_places_addresses:
             try:
                 restaurant_lon, restaurant_lat = fetch_coordinates(
                     settings.YA_API_KEY,
                     restaurant.address
                 )
-                PlaceGeolocation.objects.update_or_create(
+                PlaceGeolocation.objects.create(
                     address=restaurant.address,
                     lon=restaurant_lon,
                     lat=restaurant_lat
                 )
                 restaurant.geo_pos = (restaurant_lon, restaurant_lat)
+                print(restaurant.geo_pos)
             except TypeError:
-                print("Order location not found")
+                print("Restaurant location not found")
         else:
             restaurant_place_geo = ''
-            for place in all_places_full:
+            for place in restaurant_places:
                 if place.address == restaurant.address:
                     restaurant_place_geo = (place.lon, place.lat)
             restaurant.geo_pos = restaurant_place_geo
@@ -194,11 +208,11 @@ def view_orders(request):
             if item.order == order
         ]
 
-        if order.address not in places_addresses:
+        if order.address not in order_places_addresses:
             try:
                 order_lon, order_lat = fetch_coordinates(
                     settings.YA_API_KEY,
-                    restaurant.address
+                    order.address
                 )
                 PlaceGeolocation.objects.update_or_create(
                     address=order.address,
@@ -210,7 +224,7 @@ def view_orders(request):
                 print("Order location not found")
         else:
             order_geo_pos = ''
-            for place in all_places_full:
+            for place in order_places_full:
                 if place.address == order.address:
                     order_geo_pos = (place.lon, place.lat)
 
