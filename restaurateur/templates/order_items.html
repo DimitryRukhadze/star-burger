@@ -42,7 +42,7 @@
               {% endfor %}
             </td>
           {% endif %}
-        <td>{{item.price}} р.</td>
+        <td>{{item.total_price}} р.</td>
         <td><a href="{% url 'admin:foodcartapp_order_change' object_id=item.id %}?next={{request.get_full_path | urlencode}}">Редактирование</a></td>
       </tr>
      {% endif %}

@@ -114,10 +114,10 @@ def view_restaurants(request):
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
     order_details = Order.objects.prefetch_related(
-        'items'
+            'items'
     ).prefetch_related(
         'chosen_restaurant'
-    ).all()
+    ).all().get_order_price()
 
     order_items = OrderItem.objects.select_related(
         'order'
@@ -162,7 +162,6 @@ def view_orders(request):
                     lat=restaurant_lat
                 )
                 restaurant.geo_pos = (restaurant_lon, restaurant_lat)
-                print(restaurant.geo_pos)
             except TypeError:
                 print("Restaurant location not found")
         else:
@@ -171,11 +170,6 @@ def view_orders(request):
                 if place.address == restaurant.address:
                     restaurant_place_geo = (place.lon, place.lat)
             restaurant.geo_pos = restaurant_place_geo
-
-    order_items_prices = order_items.get_item_price().values(
-        'order_id',
-        'total_price'
-    )
 
     for order in order_details:
         order_items_products = [
@@ -204,13 +198,6 @@ def view_orders(request):
                 if place.address == order.address:
                     order_geo_pos = (place.lon, place.lat)
 
-        total_price = sum([
-            item['total_price']
-            for item in order_items_prices
-            if item['order_id'] == order.id
-        ])
-
-        order.price = total_price
         if not order.chosen_restaurant:
             avail_restaurants = {}
             for restaurant in restaurants:

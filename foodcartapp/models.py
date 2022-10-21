@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import F
+from django.db.models import F, Sum
 from django.core.validators import MinValueValidator
 from django.utils import timezone
 
@@ -20,6 +20,10 @@ class OrderItemQuerySet(models.QuerySet):
     def get_item_price(self):
         return self.annotate(total_price=F('price') * F('quantity'))
 
+
+class OrderQuerySet(models.QuerySet):
+    def get_order_price(self):
+        return self.annotate(total_price=Sum('items__price'))
 
 class ProductCategory(models.Model):
     name = models.CharField(
@@ -209,6 +213,8 @@ class Order(models.Model):
         blank=True,
         null=True
     )
+
+    objects = OrderQuerySet.as_manager()
 
     class Meta:
         verbose_name = 'Заказ',
