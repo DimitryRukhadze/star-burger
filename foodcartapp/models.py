@@ -1,3 +1,5 @@
+from functools import reduce
+
 from django.db import models
 from django.db.models import F, Sum, Subquery
 from django.core.validators import MinValueValidator
@@ -27,6 +29,7 @@ class OrderQuerySet(models.QuerySet):
 
     def get_available_restaurants(self):
         for order in self:
+            print(order.id)
             order_products = [
                 item.product
                 for item in order.items.all()
@@ -39,12 +42,20 @@ class OrderQuerySet(models.QuerySet):
             if not menu_items:
                 order.available_restaurants = []
             else:
+                available_restaurants = []
                 for menu_item in menu_items:
                     restaurants = [
                         item.restaurant
                         for item in menu_item
                     ]
-                    order.available_restaurants = restaurants
+                    available_restaurants.append(restaurants)
+
+                order.available_restaurants = list(
+                    reduce(
+                        set.intersection,
+                        [set(rest) for rest in available_restaurants]
+                    )
+                )
 
 
 class ProductCategory(models.Model):
