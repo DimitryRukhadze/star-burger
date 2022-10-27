@@ -33,11 +33,11 @@
         <td>{{item.address}}</td>
           {% if item.restaurants %}
             <td>Готовит {{item.restaurants.name}}</td>
-          {% elif not item.avail_restaurants.items%}
-            <td>{{item.avail_restaurants}}</td>
+          {% elif not item.restaurants_distances.items %}
+            <td>{{item.restaurants_distances}}</td>
           {% else %}
             <td>Могут приготовить:
-              {% for name, dist in item.avail_restaurants.items %}
+              {% for name, dist in item.restaurants_distances.items %}
                 <p>- {{name}} - {{dist}}
               {% endfor %}
             </td>

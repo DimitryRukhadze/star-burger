@@ -5,7 +5,7 @@ from django.shortcuts import redirect, render
 from django.views import View
 from django.urls import reverse_lazy, reverse
 from django.contrib.auth.decorators import user_passes_test
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Subquery
 from django.conf import settings
 
 from django.contrib.auth import authenticate, login
@@ -117,7 +117,20 @@ def view_orders(request):
             'items'
     ).prefetch_related(
         'chosen_restaurant'
+    ).prefetch_related(
+        'items__product'
+    ).prefetch_related(
+        Prefetch(
+            'items__product__menu_items',
+            queryset=RestaurantMenuItem.objects.filter(availability=True)
+        )
+    ).prefetch_related(
+        'items__product__menu_items__restaurant'
     ).all().get_order_price()
+
+    order_details.get_available_restaurants()
+    for order in order_details:
+        print(order.available_restaurants)
 
     order_items = OrderItem.objects.select_related(
         'order'
@@ -172,12 +185,6 @@ def view_orders(request):
             restaurant.geo_pos = restaurant_place_geo
 
     for order in order_details:
-        order_items_products = [
-            item.product
-            for item in order_items
-            if item.order == order
-        ]
-
         if order.address not in order_places_addresses:
             try:
                 order_lon, order_lat = fetch_coordinates(
@@ -199,28 +206,28 @@ def view_orders(request):
                     order_geo_pos = (place.lon, place.lat)
 
         if not order.chosen_restaurant:
-            avail_restaurants = {}
+            restaurants_distances = {}
             for restaurant in restaurants:
-                for menu_item in restaurant.menu_items.all():
-                    if restaurant.geo_pos:
-                        dist_to_restaurant = distance.distance(
-                            restaurant.geo_pos,
-                            order_geo_pos
-                        )
-                        if menu_item.product in order_items_products\
-                                and restaurant.name\
-                                not in avail_restaurants.keys():
-                            avail_restaurants[
-                                restaurant.name
-                            ] = dist_to_restaurant
-            if not avail_restaurants:
-                order.avail_restaurants = 'Ошибка определения координат'
-            else:
-                order.avail_restaurants = dict(
-                    sorted(
-                        avail_restaurants.items(), key=lambda x: x[1]
+                if restaurant.geo_pos:
+                    dist_to_restaurant = distance.distance(
+                        restaurant.geo_pos,
+                        order_geo_pos
                     )
-                )
+
+                if restaurant in order.available_restaurants:
+                    restaurants_distances[
+                                     restaurant.name
+                                 ] = dist_to_restaurant
+
+                if not restaurants_distances:
+                    order.restaurants_distances = 'Ошибка определения координат'
+
+                else:
+                    order.restaurants_distances = dict(
+                        sorted(
+                            restaurants_distances.items(), key=lambda x: x[1]
+                        )
+                    )
         order.order_url = reverse(
             'admin:foodcartapp_order_change',
             args=(order.id,)

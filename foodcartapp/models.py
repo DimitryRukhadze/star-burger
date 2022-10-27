@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import F, Sum
+from django.db.models import F, Sum, Subquery
 from django.core.validators import MinValueValidator
 from django.utils import timezone
 
@@ -24,6 +24,31 @@ class OrderItemQuerySet(models.QuerySet):
 class OrderQuerySet(models.QuerySet):
     def get_order_price(self):
         return self.annotate(total_price=Sum('items__price'))
+
+    def get_available_restaurants(self):
+        for order in self:
+            print(order.id)
+            order_products = [
+                item.product
+                for item in order.items.all()
+            ]
+            menu_items = [
+                product.menu_items.all()
+                for product in order_products
+            ]
+
+            if not menu_items:
+                order.available_restaurants = []
+            else:
+                for menu_item in menu_items:
+                    restaurants = [
+                        item.restaurant
+                        for item in menu_item
+                    ]
+                    if restaurants:
+                        print(restaurants)
+                    order.available_restaurants = restaurants
+
 
 class ProductCategory(models.Model):
     name = models.CharField(
