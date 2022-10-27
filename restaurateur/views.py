@@ -129,14 +129,6 @@ def view_orders(request):
     ).all().get_order_price()
 
     order_details.get_available_restaurants()
-    for order in order_details:
-        print(order.available_restaurants)
-
-    order_items = OrderItem.objects.select_related(
-        'order'
-    ).select_related(
-        'product'
-    ).filter(order__in=order_details)
 
     order_addresses = [
         order.address
