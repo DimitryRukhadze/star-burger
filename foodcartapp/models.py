@@ -29,7 +29,6 @@ class OrderQuerySet(models.QuerySet):
 
     def get_available_restaurants(self):
         for order in self:
-            print(order.id)
             order_products = [
                 item.product
                 for item in order.items.all()
