@@ -45,8 +45,6 @@ class OrderQuerySet(models.QuerySet):
                         item.restaurant
                         for item in menu_item
                     ]
-                    if restaurants:
-                        print(restaurants)
                     order.available_restaurants = restaurants
 
 
