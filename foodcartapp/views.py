@@ -1,3 +1,5 @@
+import logging
+
 from phonenumbers import is_valid_number
 from phonenumbers.phonenumberutil import NumberParseException
 from phonenumber_field.phonenumber import PhoneNumber
@@ -145,7 +147,7 @@ def register_order(request):
             lat=order_lat
         )
     except TypeError:
-        print("Order location not found")
+        logging.warning("Order location not found")
     ordered_products = serializer.validated_data['products']
 
     for product in ordered_products:
