@@ -58,7 +58,7 @@ class OrderSerializer(ModelSerializer):
     def validate_products(self, value):
         for product in value:
             try:
-                Product.objects.get(id=product.get('product'))
+                product['obj'] = Product.objects.get(id=product.get('product'))
             except ObjectDoesNotExist:
                 raise ValidationError({
                     'error': f'No product with id {product.get("product")}'
@@ -150,13 +150,16 @@ def register_order(request):
         logging.warning("Order location not found")
     ordered_products = serializer.validated_data['products']
 
-    for product in ordered_products:
-        ordered_food = Product.objects.get(id=product['product'])
-        OrderItem.objects.create(
+    order_items = [
+        OrderItem(
             order=serialized_order,
-            product=ordered_food,
+            product=product['obj'],
             quantity=product['quantity'],
-            price=ordered_food.price * int(product['quantity'])
+            price=product['obj'].price * int(product['quantity'])
         )
+        for product in ordered_products
+    ]
+
+    OrderItem.objects.bulk_create(order_items)
 
     return Response(serializer.data)
