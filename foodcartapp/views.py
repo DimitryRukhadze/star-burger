@@ -66,13 +66,12 @@ class OrderSerializer(ModelSerializer):
         return value
 
     def create(self, validated_data):
-        new_order = Order(
+        new_order = Order.objects.create(
             firstname=validated_data['firstname'],
             lastname=validated_data['lastname'],
             phonenumber=validated_data['phonenumber'],
             address=validated_data['address']
         )
-        new_order.save()
         return new_order
 
 
