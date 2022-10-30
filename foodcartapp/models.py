@@ -40,21 +40,22 @@ class OrderQuerySet(models.QuerySet):
 
             if not menu_items:
                 order.available_restaurants = []
-            else:
-                available_restaurants = []
-                for menu_item in menu_items:
-                    restaurants = [
-                        item.restaurant
-                        for item in menu_item
-                    ]
-                    available_restaurants.append(restaurants)
+                continue
 
-                order.available_restaurants = list(
-                    reduce(
-                        set.intersection,
-                        [set(rest) for rest in available_restaurants]
-                    )
+            available_restaurants = []
+            for menu_item in menu_items:
+                restaurants = [
+                    item.restaurant
+                    for item in menu_item
+                ]
+                available_restaurants.append(restaurants)
+
+            order.available_restaurants = list(
+                reduce(
+                    set.intersection,
+                    [set(rest) for rest in available_restaurants]
                 )
+            )
 
 
 class ProductCategory(models.Model):
