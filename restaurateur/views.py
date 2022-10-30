@@ -1,3 +1,5 @@
+import logging
+
 from geopy import distance
 
 from django import forms
@@ -169,7 +171,7 @@ def view_orders(request):
                 )
                 restaurant.geo_pos = (restaurant_lon, restaurant_lat)
             except TypeError:
-                print("Restaurant location not found")
+                logging.warning("Restaurant location not found")
         else:
             restaurant_place_geo = ''
             for place in restaurant_places:
@@ -191,7 +193,7 @@ def view_orders(request):
                 )
                 order_geo_pos = (order_lon, order_lat)
             except TypeError:
-                print("Order location not found")
+                logging.warning("Order location not found")
         else:
             order_geo_pos = ''
             for place in order_places_full:
