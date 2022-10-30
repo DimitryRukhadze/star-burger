@@ -126,7 +126,7 @@ def view_orders(request):
         )
     ).prefetch_related(
         'items__product__menu_items__restaurant'
-    ).all().get_order_price()
+    ).exclude(status='FINISHED').get_order_price()
 
     order_details.get_available_restaurants()
 
@@ -143,6 +143,7 @@ def view_orders(request):
             ).filter(availability=True)
         )
     ).all()
+
     restaurants_addresses = [
         restaurant.address
         for restaurant in restaurants
