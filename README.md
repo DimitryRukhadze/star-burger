@@ -58,9 +58,11 @@ pip install -r requirements.txt
 ```sh
 SECRET_KEY=django-insecure-0if40nf4nf93n4
 YA_API_KEY=ваш ключ для использования API яндекса. Его можно получить в [кабинете разработчика](https://developer.tech.yandex.ru/services/)
+ROLLBAR_TOKEN=ваш токен для [Rollbar](https://rollbar.com/). Его можно получить в [настройках](https://docs.rollbar.com/reference/getting-started-1) вашего проекта.
+DB_URL=на сайте используется модуль dj-database-url. Создайте url для подключения к базе данных postgresql по этому [гайду](https://github.com/jazzband/dj-database-url#id12) и положите его в эту переменную.
 ```
 
-Создайте файл базы данных SQLite и отмигрируйте её следующей командой:
+Создайте базу данных PostgreSQL по этому [гайду](https://www.digitalocean.com/community/tutorials/how-to-use-postgresql-with-your-django-application-on-ubuntu-14-04) и отмигрируйте её следующей командой:
 
 ```sh
 python manage.py migrate
@@ -150,7 +152,8 @@ Parcel будет следить за файлами в каталоге `bundle
 - `ALLOWED_HOSTS` — [см. документацию Django](https://docs.djangoproject.com/en/3.1/ref/settings/#allowed-hosts)
 - `YA_API_KEY` - ваш ключ для использования API яндекса. Его можно получить в [кабинете разработчика](https://developer.tech.yandex.ru/services/)
 - `ROLLBAR_TOKEN` - ваш токен для [Rollbar](https://rollbar.com/). Его можно получить в [настройках](https://docs.rollbar.com/reference/getting-started-1) вашего проекта
-- `ROLLBAR_ENV` - уровень разработки, на котором произошла ошибка. Принимает два значения: `production` и `development`. По умолчанию `development`.
+- `ROLLBAR_ENV` - этап работы приложения, отправляемый в Rollbar, на котором произошла ошибка. Принимает два значения: `production` или `development`. По умолчанию `development`.
+- `DB_URL` - на сайте используется модуль dj-database-url. Создайте url для подключения к базе данных postgresql по этому [гайду](https://github.com/jazzband/dj-database-url#id12) и положите его в эту переменную.
 
 ## Цели проекта
 
