@@ -7,7 +7,7 @@ from django.shortcuts import redirect, render
 from django.views import View
 from django.urls import reverse_lazy, reverse
 from django.contrib.auth.decorators import user_passes_test
-from django.db.models import Prefetch, Subquery
+from django.db.models import Prefetch
 from django.conf import settings
 
 from django.contrib.auth import authenticate, login
